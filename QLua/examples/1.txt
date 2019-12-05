@@ -1,0 +1,242 @@
+line = 0
+num = 10, legend = BR-11.16 [Price]
+
+candle[0]{
+-- Table: {1}
+{
+   ["low"]=53.5,
+   ["doesExist"]=1,
+   ["close"]=53.5,
+   ["datetime"]={2},
+   ["high"]=53.5,
+   ["open"]=53.5,
+   ["volume"]=2,
+},
+-- Table: {2}
+{
+   ["ms"]=0,
+   ["year"]=2016,
+   ["day"]=8,
+   ["week_day"]=3,
+   ["month"]=6,
+   ["sec"]=0,
+   ["hour"]=18,
+   ["min"]=0,
+},
+}
+
+candle[1]{
+-- Table: {1}
+{
+   ["low"]=0,
+   ["doesExist"]=0,
+   ["close"]=0,
+   ["datetime"]={2},
+   ["high"]=0,
+   ["open"]=0,
+   ["volume"]=0,
+},
+-- Table: {2}
+{
+   ["ms"]=0,
+   ["year"]=2016,
+   ["day"]=9,
+   ["week_day"]=4,
+   ["month"]=6,
+   ["sec"]=0,
+   ["hour"]=9,
+   ["min"]=0,
+},
+}
+
+candle[2]{
+-- Table: {1}
+{
+   ["low"]=0,
+   ["doesExist"]=0,
+   ["close"]=0,
+   ["datetime"]={2},
+   ["high"]=0,
+   ["open"]=0,
+   ["volume"]=0,
+},
+-- Table: {2}
+{
+   ["ms"]=0,
+   ["year"]=2016,
+   ["day"]=10,
+   ["week_day"]=5,
+   ["month"]=6,
+   ["sec"]=0,
+   ["hour"]=9,
+   ["min"]=0,
+},
+}
+
+candle[3]{
+-- Table: {1}
+{
+   ["low"]=0,
+   ["doesExist"]=0,
+   ["close"]=0,
+   ["datetime"]={2},
+   ["high"]=0,
+   ["open"]=0,
+   ["volume"]=0,
+},
+-- Table: {2}
+{
+   ["ms"]=0,
+   ["year"]=2016,
+   ["day"]=14,
+   ["week_day"]=2,
+   ["month"]=6,
+   ["sec"]=0,
+   ["hour"]=9,
+   ["min"]=0,
+},
+}
+
+candle[4]{
+-- Table: {1}
+{
+   ["low"]=51.55,
+   ["doesExist"]=1,
+   ["close"]=51.55,
+   ["datetime"]={2},
+   ["high"]=51.55,
+   ["open"]=51.55,
+   ["volume"]=1,
+},
+-- Table: {2}
+{
+   ["ms"]=0,
+   ["year"]=2016,
+   ["day"]=14,
+   ["week_day"]=2,
+   ["month"]=6,
+   ["sec"]=0,
+   ["hour"]=20,
+   ["min"]=0,
+},
+}
+
+candle[5]{
+-- Table: {1}
+{
+   ["low"]=51.61,
+   ["doesExist"]=1,
+   ["close"]=51.61,
+   ["datetime"]={2},
+   ["high"]=51.61,
+   ["open"]=51.61,
+   ["volume"]=1,
+},
+-- Table: {2}
+{
+   ["ms"]=0,
+   ["year"]=2016,
+   ["day"]=14,
+   ["week_day"]=2,
+   ["month"]=6,
+   ["sec"]=0,
+   ["hour"]=23,
+   ["min"]=0,
+},
+}
+
+candle[6]{
+-- Table: {1}
+{
+   ["low"]=0,
+   ["doesExist"]=0,
+   ["close"]=0,
+   ["datetime"]={2},
+   ["high"]=0,
+   ["open"]=0,
+   ["volume"]=0,
+},
+-- Table: {2}
+{
+   ["ms"]=0,
+   ["year"]=2016,
+   ["day"]=15,
+   ["week_day"]=3,
+   ["month"]=6,
+   ["sec"]=0,
+   ["hour"]=9,
+   ["min"]=0,
+},
+}
+
+candle[7]{
+-- Table: {1}
+{
+   ["low"]=51.69,
+   ["doesExist"]=1,
+   ["close"]=51.69,
+   ["datetime"]={2},
+   ["high"]=51.69,
+   ["open"]=51.69,
+   ["volume"]=1,
+},
+-- Table: {2}
+{
+   ["ms"]=0,
+   ["year"]=2016,
+   ["day"]=15,
+   ["week_day"]=3,
+   ["month"]=6,
+   ["sec"]=0,
+   ["hour"]=10,
+   ["min"]=0,
+},
+}
+
+candle[8]{
+-- Table: {1}
+{
+   ["low"]=51.32,
+   ["doesExist"]=1,
+   ["close"]=51.32,
+   ["datetime"]={2},
+   ["high"]=51.32,
+   ["open"]=51.32,
+   ["volume"]=1,
+},
+-- Table: {2}
+{
+   ["ms"]=0,
+   ["year"]=2016,
+   ["day"]=15,
+   ["week_day"]=3,
+   ["month"]=6,
+   ["sec"]=0,
+   ["hour"]=11,
+   ["min"]=0,
+},
+}
+
+candle[9]{
+-- Table: {1}
+{
+   ["low"]=50.16,
+   ["doesExist"]=1,
+   ["close"]=50.16,
+   ["datetime"]={2},
+   ["high"]=50.16,
+   ["open"]=50.16,
+   ["volume"]=1,
+},
+-- Table: {2}
+{
+   ["ms"]=0,
+   ["year"]=2016,
+   ["day"]=15,
+   ["week_day"]=3,
+   ["month"]=6,
+   ["sec"]=0,
+   ["hour"]=22,
+   ["min"]=0,
+},
+}

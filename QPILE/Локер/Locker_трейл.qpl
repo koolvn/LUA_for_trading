@@ -1,0 +1,394 @@
+PORTFOLIO_EX Локер-S;
+DESCRIPTION Локер-S;
+CLIENTS_LIST ALL_CLIENTS;
+FIRMS_LIST ALL_FIRMS;
+USE_CASE_SENSITIVE_CONSTANTS
+
+ 
+PROGRAM
+
+'ЗДЕСЬ НУЖНО МЕНЯТЬ ВРУЧНУЮ 
+OutFile = "C:\ФОРТС\Локер\EQUITY.TXT"    ' файл, куда записывать данные по эквити
+OutFile2 = "C:\ФОРТС\Локер\EQUITY2.TXT"    ' файл, куда записывать служебные переменные
+OutFile3 = "C:\ФОРТС\Локер\Risk.TXT"    ' файл, куда записывать служебные переменные
+NEW_GLOBAL("MaxProfit",READ_LINE(OutFile3,1,0)+0) 'максимальный профит дня в процентах
+Schet="SPBFUT00WUO" 'Меняем номер счета на свой 
+my_comment="Локер-s"
+LimitProfit=18 'лимит внутридневной прибыли в %%
+LimitLoss=-6 'лимит внутридневного убытка  в %%
+Traling=MaxProfit*0.5 ' трейлинг профита в процентах
+TralingActiv=10 'активация трейлинга профита в процентах
+AutoClose=0 'автоклоузпозиций
+Instrument="RIZ5" ' название инструмента по которому будем лочить
+Instrument2="SiZ5" ' название инструмента по которому будем лочить №2
+ClassCodeList="SPBFUT" ' код класса инструмента
+NEW_GLOBAL("Bid1",0) 'цена лучшего спроса в стакане
+NEW_GLOBAL("Offer1",0) 'цена лучшего предложения в стакане
+NEW_GLOBAL("Last1",0) 'цена лучшего предложения в стакане
+NEW_GLOBAL("Status1","Торгуем") 'цена лучшего предложения в стакане
+NEW_GLOBAL("FlagTrailing",READ_LINE(OutFile3,2,0)+0) 'максимальный профит дня в процентах
+NEW_GLOBAL("Flag",0) 'флаг срабатывания лимита профита или убытка
+NEW_GLOBAL("Limit",0)
+Bid1=GET_VALUE(GET_PARAM_EX(ClassCodeList,Instrument,"BID"),"PARAM_VALUE")+0
+Offer1=GET_VALUE(GET_PARAM_EX(ClassCodeList,Instrument,"OFFER"),"PARAM_VALUE")+0
+Last1=GET_VALUE(GET_PARAM_EX(ClassCodeList,Instrument,"LAST"),"PARAM_VALUE")+0
+Prl=300 ' проскальзывание в новом ордере который кидаем по рынку
+Prl2=90 ' отклонение от цены лимитки, после чего кидаем по рынку, а старый снимаем
+trans_id=0
+'статус сессии активна или приостановлена
+Str1=GET_PARAM_EX(ClassCodeList,Instrument,"STATUS")
+Str=GET_VALUE(Str1,"PARAM_IMAGE")
+
+
+'ЗДЕСЬ НИЧЕГО НЕ ТРОГАЕМ
+trans_id=0
+NEW_GLOBAL("Balans",READ_LINE(OutFile2,1,0)+0)
+NEW_GLOBAL("CurHour2",READ_LINE(OutFile2,2,0)+0)
+NEW_GLOBAL("CurDay2",READ_LINE(OutFile2,3,0)+0)
+NEW_GLOBAL("Balans",0)
+NEW_GLOBAL("Profit",0)
+NEW_GLOBAL("Delta",0)
+output2=CREATE_MAP()
+
+DELETE_ALL_ITEMS()
+
+
+If Str="торгуется"
+
+If Str="приостановлена"
+
+end if
+
+CurYear=GET_VALUE(GET_DATETIME(), "YEAR")
+CurMonth=GET_VALUE(GET_DATETIME(), "MONTH")
+CurDay=GET_VALUE(GET_DATETIME(), "DAY")+0
+CurHour = GET_VALUE(GET_DATETIME(), "HOUR")+0
+CurMin = GET_VALUE(GET_DATETIME(), "MIN")+0
+CurSec = GET_VALUE(GET_DATETIME(), "SEC")+0
+TextData=fTextData(CurYear,CurMonth,CurDay) &""
+TextTime=fTextTime(CurHour,CurMin) & ""
+Signal=1
+
+n=GET_NUMBER_OF("FUTURES_CLIENT_LIMITS")
+value1=0
+value2=0
+value3=0
+FOR i FROM 1 to n
+	trade = GET_ITEM ("FUTURES_CLIENT_LIMITS", i)
+	Ins = GET_VALUE (trade, "SECCODE")
+                Type_lim=GET_VALUE (trade, "TYPE")
+                Acc=GET_VALUE (trade, "TRDACCID")
+If Acc=Schet
+if Type_lim="Ден.средства"
+value1 = value1 + GET_VALUE (trade, "VARMARGIN")
+value2 = value2 + GET_VALUE (trade, "ACCRUEDINT")
+value3=value3 + GET_VALUE (trade, "CBPLIMIT")
+Balans=value3+(value1+value2)
+Limit=value3
+Profit=value1+value2
+Delta=Balans/value3*100-100
+if MaxProfit<Delta
+MaxProfit=Delta
+end if
+end if
+end if
+END FOR
+
+If TralingActiv<Maxprofit
+FlagTrailing=1
+end if
+
+If LimitProfit<Delta AND Delta<>0
+Flag=1
+end if
+
+If LimitLoss>Delta AND Delta<>0
+Flag=-1
+end if
+
+
+
+
+  If Flag=1 OR (FlagTrailing=1 AND (MaxProfit-Delta)>Traling AND Delta<>0)
+   message ("Может больше не рисковать? Прибыль"&"+"&Delta& "%",1)
+   if Shortlong()>0 'закрываем нах все позы по Инструменту №1
+   trans_id=trans_id+1
+If AutoClose=1
+  send_order("S",Bid1-Prl,ABS(Shortlong()),trans_id)
+end if
+   FlagTrailing=0
+   Status1="Залочен"
+   end if
+   if Shortlong()<0 'закрываем нах все позы по Инструменту №1
+   trans_id=trans_id+1
+If AutoClose=1
+  send_order("B",Offer1+Prl,ABS(Shortlong()),trans_id)
+end if
+   FlagTrailing=0
+   Status1="Залочен"
+   end if
+   if Shortlong2()>0 'закрываем нах все позы по Инструменту №2
+   trans_id=trans_id+1
+if AutoClose=1
+  send_order("S",Bid1-Prl,ABS(Shortlong2()),trans_id)
+end if
+   FlagTrailing=0
+   Status1="Залочен"
+   end if
+   if Shortlong2()<0 'закрываем нах все позы по Инструменту №2
+   trans_id=trans_id+1
+if AutoClose=1
+  send_order("B",Offer1+Prl,ABS(Shortlong2()),trans_id)
+end if
+   FlagTrailing=0
+   Status1="Залочен"
+   end if
+   end if
+
+
+if Flag=-1 OR Flag=1
+
+'убираем активные ордера
+
+n=GET_NUMBER_OF("ORDERS")
+value=0
+FOR i FROM n to n
+	trade = GET_ITEM ("ORDERS", i)
+	STATUS_ORDER = GET_VALUE (trade, "STATUS")
+if STATUS_ORDER="ACTIVE" 
+                OSTATOK=GET_VALUE (trade, "BALANCE")+0
+	NUMBER_ORDER = value + GET_VALUE (trade, "NUMBER")
+                trans_id=trans_id+1
+                Ins = GET_VALUE (trade, "SECCODE")
+                If Ins=Instrument OR Ins=Instrument2
+             '   kill_order(NUMBER_ORDER,trans_id)
+                end if
+end if
+END FOR
+
+
+  If Flag=-1
+   message ("Убыток"&Delta&"%",1)
+   if Shortlong()>0 'закрываем нах все позы по Инструменту №1
+   trans_id=trans_id+1
+if AutoClose=1
+   send_order("S",Bid1-Prl,ABS(Shortlong()),trans_id)
+end if
+   end if
+   if Shortlong()<0 'закрываем нах все позы по Инструменту №1
+   trans_id=trans_id+1
+if AutoClose=1
+   send_order("B",Offer1+Prl,ABS(Shortlong()),trans_id)
+end if
+   end if
+   if Shortlong2()>0 'закрываем нах все позы по Инструменту №2
+   trans_id=trans_id+1
+if AutoClose=1
+   send_order("S",Bid1-Prl,ABS(Shortlong2()),trans_id)
+end if
+   end if 
+   if Shortlong2()<0 'закрываем нах все позы по Инструменту №2
+   trans_id=trans_id+1
+if AutoClose=1
+   send_order("B",Offer1+Prl,ABS(Shortlong2()),trans_id)
+end if
+   end if
+   end if
+end if
+
+
+
+
+'CLEAR_FILE(OutFile)
+if CurHour>CurHour2 AND CurDay2=CurDay AND CurHour>=10 AND CurHour<=23 AND Balans<>0
+WRITELN(OutFile, TextData  & "," & TextTime & "," & Balans & "," &Limit)
+CurHour2=CurHour
+CurDay2=CurDay
+end if
+
+if CurHour<CurHour2 AND CurDay2<>CurDay AND CurHour>=10 AND CurHour<=23 AND Balans<>0
+WRITELN(OutFile, TextData  & "," & TextTime & "," & Balans & "," & Limit)
+CurHour2=CurHour
+CurDay2=CurDay
+end if
+
+if CurHour2=0 AND CurDay2=0 AND CurHour>=10 AND CurHour<=23 AND Balans<>0
+WRITELN(OutFile, TextData  & "," & TextTime & "," & Balans & "," & Limit) 'Запись в лог-файл
+CurHour2=CurHour
+CurDay2=CurDay
+end if
+
+CLEAR_FILE(OutFile2)
+WRITELN(OutFile2, Balans)
+WRITELN(OutFile2, CurHour2)
+WRITELN(OutFile2, CurDay2)
+
+CLEAR_FILE(OutFile3)
+WRITELN(OutFile3, MaxProfit)
+WRITELN(OutFile3, FlagTrailing)
+
+
+ 'вводим в таблицу output2 
+      output2=SET_VALUE(output2,"Schet",Schet)
+      output2=SET_VALUE(output2,"Balans",Balans)
+      output2=SET_VALUE(output2,"Profit",Profit)
+      output2=SET_VALUE(output2,"Delta",Delta)
+      output2=SET_VALUE(output2,"MaxProfit",MaxProfit)
+      output2=SET_VALUE(output2,"FlagTrailing",FlagTrailing)
+      output2=SET_VALUE(output2,"Status1",Status1)
+      ADD_ITEM(1,output2)
+
+
+end if
+
+' функция перевода даты в текстовый формат
+func fTextData(Year,Month,Day)
+  if (LEN(Month) < 2)
+    Month = "0" & Month
+  end if
+    if (LEN(Day) < 2)
+    Day = "0" & Day
+  end if
+  result = Year & Month & Day
+end func
+ 
+' функция перевода времени в текстовый формат
+func fTextTime(Hour,Min,Sec)
+  if (LEN(Hour) < 2)
+    Hour = "0" & Hour
+  end if
+    if (LEN(Min) < 2)
+    Min = "0" & Min
+  end if
+  result = Hour & Min & "00"
+end func
+
+' убираем ордера
+func kill_order(order_key,trans_id) 
+
+trans_params = ""
+trans_params = set_value (trans_params, "TRANS_ID", trans_id)
+trans_params = set_value (trans_params, "ACCOUNT", Schet)
+trans_params = set_value (trans_params, "CLIENT_CODE", Schet)
+trans_params = set_value (trans_params, "CLASSCODE", ClassCodeList)
+trans_params = set_value (trans_params, "SECCODE", Instrument)
+trans_params = set_value (trans_params, "ACTION", "KILL_ORDER")
+trans_params = set_value (trans_params, "ORDER_KEY", order_key)
+trans_result = SEND_TRANSACTION (5, trans_params)
+while = 0 'обнуление счётчика для бесконечности цикла
+FOR while FROM 0 TO 1 'цикл проверки заявок
+'while = 0 'обнуление счётчика для бесконечности цикла
+IF GET_VALUE (trans_result, "RESULT_EX") == "3" 'если транзакция выполнена
+OrderNumber = GET_VALUE(trans_result, "ORDER_NUMBER")
+RESULT = 1 'результат функции
+RETURN 'выход из функции отправки заявок
+END IF 'выход из условия: если транзакция выполнена
+END FOR 'закрытие цикла отправки заявок
+end func
+
+func Shortlong()
+
+n=GET_NUMBER_OF("FUTURES_CLIENT_HOLDINGS")
+value=0
+FOR i FROM 1 to n
+	trade = GET_ITEM ("FUTURES_CLIENT_HOLDINGS", i)
+	Ins = GET_VALUE (trade, "SECCODE")
+if Instrument=Ins	
+value = value + GET_VALUE (trade, "TOTAL_NET")
+end if
+
+END FOR
+
+	result=value
+
+end func
+
+func Shortlong2()
+
+n=GET_NUMBER_OF("FUTURES_CLIENT_HOLDINGS")
+value=0
+FOR i FROM 1 to n
+	trade = GET_ITEM ("FUTURES_CLIENT_HOLDINGS", i)
+	Ins = GET_VALUE (trade, "SECCODE")
+if Instrument2=Ins	
+value = value + GET_VALUE (trade, "TOTAL_NET")
+end if
+
+END FOR
+
+	result=value
+
+end func
+
+' функция выставления лимитного ордера
+func send_order(operation,price,Lots,trans_id) 
+
+trans_params = ""
+trans_params = set_value (trans_params, "TRANS_ID", trans_id)
+trans_params = set_value (trans_params, "ACTION", "NEW_ORDER")
+trans_params = set_value (trans_params, "CLASSCODE", ClassCodeList)
+trans_params = set_value (trans_params, "SECCODE", Instrument)
+trans_params = set_value (trans_params, "ACCOUNT", Schet) 'Это надо менять
+trans_params = set_value (trans_params, "OPERATION", operation)
+trans_params = set_value (trans_params, "PRICE", price)
+trans_params = set_value (trans_params, "QUANTITY", Lots)
+trans_params = set_value (trans_params, "CLIENT_CODE", my_comment) 'Это надо менять
+trans_result = SEND_TRANSACTION (5, trans_params)
+while = 0 'обнуление счётчика для бесконечности цикла
+FOR while FROM 0 TO 10000 'цикл проверки заявок
+'while = 0 'обнуление счётчика для бесконечности цикла
+IF GET_VALUE (trans_result, "RESULT_EX") == "3" 'если транзакция выполнена
+OrderNumber = GET_VALUE(trans_result, "ORDER_NUMBER")
+RESULT = 1 'результат функции
+RETURN 'выход из функции отправки заявок
+END IF 'выход из условия: если транзакция выполнена
+END FOR 'закрытие цикла отправки заявок
+
+end func
+
+ 
+END_PROGRAM
+
+PARAMETER Schet;
+PARAMETER_TITLE Счет;
+PARAMETER_DESCRIPTION Счет;
+PARAMETER_TYPE STRING(30);
+END
+
+PARAMETER Balans;
+PARAMETER_TITLE Баланс;
+PARAMETER_DESCRIPTION Баланс;
+PARAMETER_TYPE NUMERIC(10,2);
+END
+
+PARAMETER Profit;
+PARAMETER_TITLE (+,-);
+PARAMETER_DESCRIPTION (+,-);
+PARAMETER_TYPE NUMERIC(10,2);
+END
+
+PARAMETER Delta;
+PARAMETER_TITLE %;
+PARAMETER_DESCRIPTION %;
+PARAMETER_TYPE NUMERIC(10,1);
+END
+
+PARAMETER Maxprofit;
+PARAMETER_TITLE Maxprofit;
+PARAMETER_DESCRIPTION Maxprofit;
+PARAMETER_TYPE NUMERIC(10,1);
+END
+
+PARAMETER FlagTrailing;
+PARAMETER_TITLE FLAG;
+PARAMETER_DESCRIPTION FLAG;
+PARAMETER_TYPE NUMERIC(10,0);
+END
+
+PARAMETER Status1;
+PARAMETER_TITLE СтатусТоргов;
+PARAMETER_DESCRIPTION СтатусТоргов;
+PARAMETER_TYPE STRING(30);
+END
+
+END_PORTFOLIO_EX

@@ -1,0 +1,15 @@
+DepoBox:SPBFUT00IX7
+OffsetBox:
+TakeBox:
+StopBox:
+TypeOrderCombo:Стоп+Тейк
+SlipBox:
+LotSizeBox:
+ClientBox:
+SecCodeBox:
+TypePoints:Пункты
+ClassCode:
+TypeLimitCombo:T0
+PoseCombo:
+StepNumber:
+StepSize:

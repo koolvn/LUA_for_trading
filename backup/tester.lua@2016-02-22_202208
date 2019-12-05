@@ -1,0 +1,156 @@
+R=2 								-- Максимальный риск на день в % от депозита
+P=6									-- Целевая дневная прибыль в % от депозита
+ol = getItem("futures_client_limits",0).cbplimit 			-- Лимит открытия, т.е. сумма денег на начало дня
+vm = getItem("futures_client_limits",0).varmargin 	-- Вариационная маржа
+nd = getItem("futures_client_limits",0).accruedint 		-- Накопленный доход
+pl = vm+nd 																-- Текущий профит/лосс
+plp = math.ceil(pl/ol*10000)/100 							-- P/L в процентах
+risk = ol*0.01*R 														-- Дневной риск в рублях
+profit = ol*0.01*P													-- Дневной профит в рублях
+StopPlaced=false
+
+
+function main()
+CLASS_CODE="SPBFUT"
+SEC_CODE="BRH6"
+CLIENT_CODE="SPBFUT00aya"
+SEC_STEP_PRICE = getParamEx(CLASS_CODE, SEC_CODE, "STEPPRICE").param_value -- Получает стоимость шага цены
+SEC_PRICE_STEP = getParamEx(CLASS_CODE, SEC_CODE, "SEC_PRICE_STEP").param_value
+t_id=tostring(os.time())
+run=true
+while run do
+OpPo()
+sleep(10)
+end
+end
+
+
+function AutoTS()
+local minAP=tonumber(getParamEx(CLASS_CODE, SEC_CODE, "PRICEMIN").param_value)
+local maxAP=tonumber(getParamEx(CLASS_CODE, SEC_CODE, "PRICEMAX").param_value)
+
+
+local T = {
+		["ACTION"]="NEW_STOP_ORDER";
+		["STOP_ORDER_KIND"]="TAKE_PROFIT_AND_STOP_LIMIT_ORDER";
+		["TRANS_ID"]=t_id;
+		["CLASSCODE"]=CLASS_CODE;
+		["SECCODE"]=SEC_CODE;
+		["ACCOUNT"]=CLIENT_CODE;
+		["CLIENT_CODE"]="RiskMan";
+		["OPERATION"]=Operation;
+		["QUANTITY"]=QTY;
+		["STOPPRICE2"]=StopPrice;								-- Цена активации стоп заявки
+		["PRICE"]=tostring(minAP);								-- Limit order price
+		["STOPPRICE"]=TakePrice;								-- Цена активации тейк-профита
+		["OFFSET"]=tostring(5*SEC_PRICE_STEP);		-- Отступ
+		["OFFSET_UNITS"]="PRICE_UNITS"; 
+		["SPREAD"]=tostring(10*SEC_PRICE_STEP);	-- Защитный спред
+		["SPREAD_UNITS"]="PRICE_UNITS";
+		["MARKET_TAKE_PROFIT"]="NO";
+		["EXPIRY_DATE"]="TODAY";
+		["MARKET_STOP_LIMIT"]="NO"
+	}
+	
+	sendTransaction(T)
+	KillId=t_id+1
+	sleep(1000)
+end
+
+function OpPo() 					-- Перебирает строки таблицы "Позиции по клиентским счетам (фьючерсы)", ищет Текущие чистые позиции
+	for i = 0,getNumberOf("FUTURES_CLIENT_HOLDING") - 1 do 
+		if getItem("FUTURES_CLIENT_HOLDING",i).totalnet ~= 0 then -- ЕСЛИ чистая позиция не равна нулю ТО
+			if getItem("FUTURES_CLIENT_HOLDING",i).totalnet > 0 then -- ЕСЛИ текущая чистая позиция > 0, ТО открыта длинная позиция (BUY)
+					local BuyVol = getItem("FUTURES_CLIENT_HOLDING",i).totalnet	-- Количество лотов в позиции BUY				
+					local SC = getItem("FUTURES_CLIENT_HOLDING",i).sec_code		-- Код фьючерсного контракта
+					local PositionPrice = getItem("FUTURES_CLIENT_HOLDING",i).avrposnprice  --Цена открытия позиции
+					if SC==SEC_CODE and QTY~=tostring(BuyVol) and StopPlaced==false then
+						Operation="S"					
+						QTY=tostring(BuyVol)
+						StopPrice=tostring(math.ceil((PositionPrice-(risk/(SEC_STEP_PRICE*BuyVol))*SEC_PRICE_STEP)*100)/100)	-- Цена активации стоп заявки
+						TakePrice=tostring(math.ceil((PositionPrice+(profit/(SEC_STEP_PRICE*BuyVol))*SEC_PRICE_STEP)*100)/100)	-- Цена активации тейк-профита
+						AutoTS()						
+					end
+					if SC==SEC_CODE and QTY~=tostring(BuyVol) and StopPlaced==true then
+						KillStop()
+					end
+			else   -- ИНАЧЕ открыта короткая позиция (SELL)
+					local SellVol = math.abs(getItem("FUTURES_CLIENT_HOLDING",i).totalnet) 	-- Количество лотов в позиции SELL
+					local SC = getItem("FUTURES_CLIENT_HOLDING",i).sec_code					-- Код фьючерсного контракта
+					if SC==SEC_CODE and QTY~=tostring(SellVol) and StopPlaced==false then
+						Operation="B"
+						QTY=tostring(SellVol)
+						StopPrice="31" 	-- Цена активации стоп заявки
+						TakePrice="34" 	-- Цена активации тейк-профита
+						str="oper "..Operation.." qty "..QTY.." "..StopPrice.." "..TakePrice.." "
+						log(str)
+						AutoTS()
+					end
+					if SC==SEC_CODE and QTY~=tostring(BuyVol) and StopPlaced==true then
+						KillStop()
+					end
+			end
+		end
+	end
+end
+
+function KillStop()
+local KO= {
+
+                  ["CLASSCODE"]=CLASS_CODE,
+
+                  ["SECCODE"]=SEC_CODE,
+
+                  ["ACTION"]="KILL_ORDER",
+
+                  ["ACCOUNT"]=CLIENT_CODE,
+
+                  ["CLIENT_CODE"]=CLIENT_CODE,
+
+                  ["TYPE"]="L",
+
+                  ["OPERATION"]=Operation,
+
+                  ["TRANS_ID"]=KillId,
+
+                  ["ORDER_KEY"]=tostring(a_num)
+
+            }
+	sendTransaction(KO)
+end
+function OnStop()
+run=false
+end
+
+function OnStopOrder(stop_order)
+a_num=stop_order.order_num
+StopPlaced=true
+end
+
+function log(str) 					-- LOG
+ file = io.open(getScriptPath().."\\TESTER.txt", "a")
+ d = os.date("*t")
+ file:write( os.date('%Y/%m/%d %H:%M:%S').." "..str.."\n" )
+ file:close()
+end
+
+function CheckBit(flags, bit)
+   -- Проверяет, что переданные аргументы являются числами
+   if type(flags) ~= "number" then error("Предупреждение!!! Checkbit: 1-й аргумент не число!"); end;
+   if type(bit) ~= "number" then error("Предупреждение!!! Checkbit: 2-й аргумент не число!"); end;
+   local RevBitsStr  = ""; -- Перевернутое (задом наперед) строковое представление двоичного представления переданного десятичного числа (flags)
+   local Fmod = 0; -- Остаток от деления
+   local Go = true; -- Флаг работы цикла
+   while Go do
+      Fmod = math.fmod(flags, 2); -- Остаток от деления
+      flags = math.floor(flags/2); -- Оставляет для следующей итерации цикла только целую часть от деления
+      RevBitsStr = RevBitsStr ..tostring(Fmod); -- Добавляет справа остаток от деления
+      if flags == 0 then Go = false; end; -- Если был последний бит, завершает цикл
+   end;
+   -- Возвращает значение бита
+   local Result = RevBitsStr :sub(bit+1,bit+1);
+   if Result == "0" then return 0;
+   elseif Result == "1" then return 1;
+   else return nil;
+   end;
+end;
